@@ -63,6 +63,9 @@ import SyncDashboardState, {
   getDashboardContextLocalStorage,
 } from '../components/SyncDashboardState';
 
+// Import the Dashboard Chatbot
+import DashboardChatbot from 'src/dashboard/components/DashboardChatbot';
+
 export const DashboardPageIdContext = createContext('');
 
 const DashboardBuilder = lazy(
@@ -257,6 +260,7 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
   if (error) throw error; // caught in error boundary
 
   const DashboardBuilderComponent = useMemo(() => <DashboardBuilder />, []);
+  
   return (
     <>
       <Global styles={globalStyles} />
@@ -277,6 +281,11 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
               >
                 {DashboardBuilderComponent}
               </DashboardContainer>
+              {/* Dashboard Chatbot - Only appears on dashboard pages */}
+              <DashboardChatbot
+                dashboardId={id}
+                dashboardTitle={dashboard_title}
+              />
             </CrudThemeProvider>
           </DashboardPageIdContext.Provider>
         </>

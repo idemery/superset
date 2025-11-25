@@ -1908,6 +1908,7 @@ TALISMAN_CONFIG = {
             "https://tile.openstreetmap.org",
             "https://tile.osm.ch",
             "https://a.basemaps.cartocdn.com",
+            "http://localhost:11435",
         ],
         "object-src": "'none'",
         "style-src": [
@@ -1943,6 +1944,7 @@ TALISMAN_DEV_CONFIG = {
             "https://tile.openstreetmap.org",
             "https://tile.osm.ch",
             "https://a.basemaps.cartocdn.com",
+            "http://localhost:11435",
         ],
         "object-src": "'none'",
         "style-src": [
