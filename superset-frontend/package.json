@@ -217,9 +217,14 @@
     "use-immer": "^0.11.0",
     "use-query-params": "^1.1.9",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "react-markdown": "^8.0.7",
+    "remark-gfm": "^3.0.1",
+    "react-syntax-highlighter": "^16.1.0",
+    "mermaid": "^11.12.1"
   },
   "devDependencies": {
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@applitools/eyes-storybook": "^3.60.0",
     "@babel/cli": "^7.28.3",
     "@babel/compat-data": "^7.28.4",

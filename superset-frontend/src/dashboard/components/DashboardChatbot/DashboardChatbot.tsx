@@ -26,6 +26,8 @@ import {
 } from 'react';
 import { styled, keyframes } from '@apache-superset/core/ui';
 import { t } from '@superset-ui/core';
+import ChatbotMarkdown from './ChatbotMarkdown';
+
 
 // Types
 interface Message {
@@ -320,6 +322,12 @@ const MessageBubble = styled.div<{ isUser: boolean; isStreaming?: boolean }>`
   `}
 `;
 
+const UserMessageContent = styled.div`
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+`;
+
 const MessageTime = styled.span`
   font-size: 10px;
   color: rgba(255, 255, 255, 0.4);
@@ -607,7 +615,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
           model: modelName,
           messages: requestMessages,
           temperature: 0.1,
-          max_tokens: 64000,
+          max_tokens: 256000,
           stream: enableStreaming,
         }),
         signal: abortControllerRef.current.signal,
@@ -757,8 +765,15 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
           ) : (
             messages.map(message => (
               <MessageWrapper key={message.id} isUser={message.role === 'user'}>
-                <MessageBubble isUser={message.role === 'user'} isStreaming={message.isStreaming}>
-                  {message.content || (message.isStreaming ? t('Thinking...') : '')}
+                <MessageBubble isUser={message.role === 'user'}>
+                  {message.role === 'user' ? (
+                    <UserMessageContent>{message.content}</UserMessageContent>
+                  ) : (
+                    <ChatbotMarkdown 
+                      content={message.content} 
+                      isStreaming={message.isStreaming}
+                    />
+                  )}
                 </MessageBubble>
                 <MessageTime>{formatTime(message.timestamp)}</MessageTime>
               </MessageWrapper>
