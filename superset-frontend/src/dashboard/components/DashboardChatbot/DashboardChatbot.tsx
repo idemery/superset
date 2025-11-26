@@ -41,6 +41,7 @@ interface DashboardChatbotProps {
   dashboardTitle?: string;
   /** Override the default LLM API URL */
   apiUrl?: string;
+  apiKey?: string;
   /** Override the default model name */
   modelName?: string;
   /** Enable streaming responses (default: true) */
@@ -53,8 +54,9 @@ interface ChatCompletionMessage {
 }
 
 // Configuration - can be overridden via props or environment variables
-const DEFAULT_LLM_API_URL = 'http://localhost:11435/v1/chat/completions';
-const DEFAULT_MODEL = 'qwen3:4b-instruct';
+const DEFAULT_LLM_API_URL = 'http://localhost:8111/v1/chat/completions';
+const DEFAULT_LLM_API_KEY = 'http://172.20.30.18:33821/v1__nothing__qwen3-coder:30b-a3b-fp16__http://host.docker.internal:8088__admin__admin';
+const DEFAULT_MODEL = 'superset';
 
 // Animations
 const pulseGlow = keyframes`
@@ -495,6 +497,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   dashboardId,
   dashboardTitle = 'Dashboard',
   apiUrl = DEFAULT_LLM_API_URL,
+  apiKey = DEFAULT_LLM_API_KEY,
   modelName = DEFAULT_MODEL,
   enableStreaming = true,
 }) => {
@@ -522,29 +525,8 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   }, []);
 
   const buildSystemPrompt = useCallback((): string => {
-    return `You are a helpful AI assistant for Apache Superset dashboards. You are currently helping the user with dashboard ID: ${dashboardId}, titled "${dashboardTitle}".
-
-Your capabilities include:
-- Helping users understand their dashboard and charts
-- Assisting with creating new charts and visualizations using Superset's API
-- Explaining data insights and metrics
-- Guiding users through Superset features
-- Answering questions about the dashboard's data
-
-When the user asks to create a chart or modify the dashboard, use the available tools to interact with the Superset API.
-
-Available API endpoints you can help with:
-- GET /api/v1/chart/ - List charts
-- POST /api/v1/chart/ - Create a new chart
-- GET /api/v1/dataset/ - List datasets
-- GET /api/v1/dashboard/${dashboardId} - Get current dashboard info
-- POST /api/v1/dashboard/${dashboardId}/charts - Add chart to dashboard
-
-Always be helpful, concise, and provide actionable guidance. When suggesting chart creation, explain the parameters needed.
-
-Current context:
-- Dashboard ID: ${dashboardId}
-- Dashboard Title: ${dashboardTitle}`;
+    // return `You are a helpful AI assistant for Apache Superset dashboards. You are currently helping the user with dashboard ID: ${dashboardId}, titled "${dashboardTitle}".
+    return `Dashboard ID: ${dashboardId}, titled "${dashboardTitle}"`;
   }, [dashboardId, dashboardTitle]);
 
   // Streaming response handler
@@ -611,21 +593,21 @@ Current context:
         .map(msg => ({ role: msg.role, content: msg.content }));
 
       const requestMessages: ChatCompletionMessage[] = [
-        { role: 'system', content: buildSystemPrompt() },
+        // { role: 'system', content: buildSystemPrompt() },
         ...conversationHistory,
-        { role: 'user', content: userMessage },
+        { role: 'user', content: userMessage + "\n\n" + buildSystemPrompt() },
       ];
 
       abortControllerRef.current = new AbortController();
 
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: modelName,
           messages: requestMessages,
-          temperature: 0.7,
-          max_tokens: 2048,
+          temperature: 0.1,
+          max_tokens: 64000,
           stream: enableStreaming,
         }),
         signal: abortControllerRef.current.signal,

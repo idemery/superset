@@ -1909,6 +1909,9 @@ TALISMAN_CONFIG = {
             "https://tile.osm.ch",
             "https://a.basemaps.cartocdn.com",
             "http://localhost:11435",
+            "http://localhost:11434",
+            "http://localhost:8111",
+            "https://api.anthropic.com",
         ],
         "object-src": "'none'",
         "style-src": [
@@ -1945,6 +1948,9 @@ TALISMAN_DEV_CONFIG = {
             "https://tile.osm.ch",
             "https://a.basemaps.cartocdn.com",
             "http://localhost:11435",
+            "http://localhost:11434",
+            "http://localhost:8111",
+            "https://api.anthropic.com",
         ],
         "object-src": "'none'",
         "style-src": [
