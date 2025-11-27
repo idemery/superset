@@ -57,7 +57,8 @@ interface ChatCompletionMessage {
 
 // Configuration - can be overridden via props or environment variables
 const DEFAULT_LLM_API_URL = 'http://localhost:8111/v1/chat/completions';
-const DEFAULT_LLM_API_KEY = 'http://172.20.30.18:33821/v1__nothing__qwen3-coder:30b-a3b-fp16__http://host.docker.internal:8088__admin__admin';
+// const DEFAULT_LLM_API_KEY = 'http://172.20.30.18:33821/v1__nothing__qwen3-coder:30b-a3b-fp16__http://host.docker.internal:8088__admin__admin';
+const DEFAULT_LLM_API_KEY = 'http://host.docker.internal:11434/v1__nothing__Qwen3-Coder:latest__http://host.docker.internal:8088__admin__admin';
 const DEFAULT_MODEL = 'superset';
 
 // Animations
@@ -534,7 +535,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
 
   const buildSystemPrompt = useCallback((): string => {
     // return `You are a helpful AI assistant for Apache Superset dashboards. You are currently helping the user with dashboard ID: ${dashboardId}, titled "${dashboardTitle}".
-    return `Dashboard ID: ${dashboardId}, titled "${dashboardTitle}"`;
+    return `Current Dashboard ID: ${dashboardId}`;
   }, [dashboardId, dashboardTitle]);
 
   // Streaming response handler
