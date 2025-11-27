@@ -23,8 +23,9 @@ import {
   useEffect,
   useCallback,
   KeyboardEvent,
+  useMemo,
 } from 'react';
-import { styled, keyframes } from '@apache-superset/core/ui';
+import { styled, keyframes, useTheme } from '@apache-superset/core/ui';
 import { t } from '@superset-ui/core';
 import ChatbotMarkdown from './ChatbotMarkdown';
 
@@ -65,7 +66,6 @@ interface ChatCompletionMessage {
 
 // Configuration - can be overridden via props or environment variables
 const DEFAULT_LLM_API_URL = 'http://localhost:8111/v1/chat/completions';
-// const DEFAULT_LLM_API_KEY = 'http://172.20.30.18:33821/v1__nothing__qwen3-coder:30b-a3b-fp16__http://host.docker.internal:8088__admin__admin';
 const DEFAULT_LLM_API_KEY = 'http://host.docker.internal:11434/v1__nothing__Qwen3-Coder:latest__http://host.docker.internal:8088__admin__admin';
 const DEFAULT_MODEL = 'superset';
 
@@ -173,18 +173,13 @@ const sparkle = keyframes`
   }
 `;
 
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-`;
-
-// Styled Components
+// Styled Components with theme support
 const ChatbotContainer = styled.div`
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 1000;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: ${({ theme }) => theme.fontFamily || "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"};
 `;
 
 const FloatingButton = styled.button<{ isOpen: boolean }>`
@@ -196,7 +191,7 @@ const FloatingButton = styled.button<{ isOpen: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #06b6d4 100%);
+  background: linear-gradient(135deg, ${({ theme }) => theme.colorPrimary} 0%, #8b5cf6 50%, #06b6d4 100%);
   background-size: 200% 200%;
   animation: ${pulseGlow} 2s ease-in-out infinite;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -253,28 +248,30 @@ const SparkleEffect = styled.span`
   &:nth-of-type(3) { top: 50%; left: 6px; animation-delay: 1s; }
 `;
 
-const ChatWindow = styled.div<{ isOpen: boolean }>`
+const ChatWindow = styled.div<{ isOpen: boolean; $isDark: boolean }>`
   position: absolute;
   bottom: 76px;
   right: 0;
   width: 420px;
   height: 580px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
-  border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
-              0 0 0 1px rgba(255, 255, 255, 0.1),
-              0 0 80px rgba(59, 130, 246, 0.15);
+  background: ${({ theme, $isDark }) => $isDark 
+    ? `linear-gradient(180deg, ${theme.colorBgContainer} 0%, ${theme.colorBgElevated} 100%)`
+    : `linear-gradient(180deg, ${theme.colorBgContainer} 0%, ${theme.colorBgLayout} 100%)`};
+  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
+  box-shadow: ${({ theme }) => theme.boxShadow};
+  border: 1px solid ${({ theme }) => theme.colorBorderSecondary};
   display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
   flex-direction: column;
   overflow: hidden;
   animation: ${slideUp} 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(20px);
 `;
 
-const ChatHeader = styled.div`
+const ChatHeader = styled.div<{ $isDark: boolean }>`
   padding: 20px 24px;
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 50%, rgba(6, 182, 212, 0.2) 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: ${({ theme, $isDark }) => $isDark
+    ? `linear-gradient(90deg, rgba(40, 147, 179, 0.2) 0%, rgba(139, 92, 246, 0.2) 50%, rgba(6, 182, 212, 0.2) 100%)`
+    : `linear-gradient(90deg, ${theme.colorPrimaryBg} 0%, rgba(139, 92, 246, 0.1) 50%, rgba(6, 182, 212, 0.1) 100%)`};
+  border-bottom: 1px solid ${({ theme }) => theme.colorBorderSecondary};
   display: flex;
   align-items: center;
   gap: 12px;
@@ -283,12 +280,12 @@ const ChatHeader = styled.div`
 const AvatarContainer = styled.div`
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colorPrimary} 0%, #8b5cf6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px ${({ theme }) => theme.colorPrimary}66;
   svg { width: 24px; height: 24px; color: white; }
 `;
 
@@ -298,16 +295,16 @@ const HeaderInfo = styled.div`
 
 const HeaderTitle = styled.h3`
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
+  font-size: ${({ theme }) => theme.fontSizeLG}px;
+  font-weight: ${({ theme }) => theme.fontWeightStrong};
+  color: ${({ theme }) => theme.colorTextHeading};
   letter-spacing: -0.02em;
 `;
 
 const HeaderSubtitle = styled.p`
   margin: 2px 0 0;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: ${({ theme }) => theme.fontSizeSM}px;
+  color: ${({ theme }) => theme.colorTextSecondary};
 `;
 
 const ConnectionStatus = styled.span<{ connected: boolean }>`
@@ -319,7 +316,7 @@ const ConnectionStatus = styled.span<{ connected: boolean }>`
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: ${({ connected }) => connected ? '#22c55e' : '#ef4444'};
+    background: ${({ connected, theme }) => connected ? theme.colorSuccess : theme.colorError};
   }
 `;
 
@@ -331,24 +328,31 @@ const HeaderButtons = styled.div`
 const HeaderButton = styled.button`
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: ${({ theme }) => theme.borderRadius}px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
+  background: ${({ theme }) => theme.colorFillSecondary};
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  &:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
-  svg { width: 16px; height: 16px; color: rgba(255, 255, 255, 0.7); }
+  &:hover { 
+    background: ${({ theme }) => theme.colorFillContentHover}; 
+    transform: scale(1.05); 
+  }
+  svg { 
+    width: 16px; 
+    height: 16px; 
+    color: ${({ theme }) => theme.colorTextSecondary}; 
+  }
 `;
 
 const CloseButton = styled(HeaderButton)``;
 
 const ResetButton = styled(HeaderButton)`
   &:hover {
-    background: rgba(239, 68, 68, 0.3);
-    svg { color: #fca5a5; }
+    background: ${({ theme }) => theme.colorErrorBg};
+    svg { color: ${({ theme }) => theme.colorError}; }
   }
 `;
 
@@ -362,8 +366,13 @@ const MessagesContainer = styled.div`
 
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
-  &::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+  &::-webkit-scrollbar-thumb { 
+    background: ${({ theme }) => theme.colorFillSecondary}; 
+    border-radius: 3px; 
+  }
+  &::-webkit-scrollbar-thumb:hover { 
+    background: ${({ theme }) => theme.colorFillContentHover}; 
+  }
 `;
 
 const MessageWrapper = styled.div<{ isUser: boolean }>`
@@ -373,20 +382,26 @@ const MessageWrapper = styled.div<{ isUser: boolean }>`
   animation: ${fadeIn} 0.3s ease;
 `;
 
-const MessageBubble = styled.div<{ isUser: boolean; isStreaming?: boolean }>`
+const MessageBubble = styled.div<{ isUser: boolean; isStreaming?: boolean; $isDark: boolean }>`
   max-width: 85%;
   padding: 12px 16px;
-  border-radius: ${({ isUser }) => isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};
-  background: ${({ isUser }) => isUser
-    ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-    : 'rgba(255, 255, 255, 0.08)'};
-  color: ${({ isUser }) => isUser ? 'white' : 'rgba(255, 255, 255, 0.9)'};
-  font-size: 14px;
-  line-height: 1.6;
-  box-shadow: ${({ isUser }) => isUser
-    ? '0 4px 12px rgba(59, 130, 246, 0.3)'
-    : '0 2px 8px rgba(0, 0, 0, 0.2)'};
-  border: 1px solid ${({ isUser }) => isUser ? 'transparent' : 'rgba(255, 255, 255, 0.08)'};
+  border-radius: ${({ isUser, theme }) => isUser 
+    ? `${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusSM}px ${theme.borderRadiusLG}px` 
+    : `${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusSM}px`};
+  background: ${({ isUser, theme, $isDark }) => isUser
+    ? `linear-gradient(135deg, ${theme.colorPrimary} 0%, ${theme.colorPrimaryActive} 100%)`
+    : $isDark 
+      ? theme.colorFillSecondary
+      : theme.colorBgElevated};
+  color: ${({ isUser, theme }) => isUser ? theme.colorWhite : theme.colorText};
+  font-size: ${({ theme }) => theme.fontSize}px;
+  line-height: ${({ theme }) => theme.lineHeight};
+  box-shadow: ${({ isUser, theme }) => isUser
+    ? `0 4px 12px ${theme.colorPrimary}4D`
+    : theme.boxShadowTertiary};
+  border: 1px solid ${({ isUser, theme, $isDark }) => isUser 
+    ? 'transparent' 
+    : $isDark ? theme.colorBorderSecondary : theme.colorBorder};
   white-space: pre-wrap;
   word-break: break-word;
 
@@ -404,31 +419,32 @@ const MessageBubble = styled.div<{ isUser: boolean; isStreaming?: boolean }>`
 `;
 
 const UserMessageContent = styled.div`
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSize}px;
   line-height: 1.5;
   white-space: pre-wrap;
 `;
 
 const MessageTime = styled.span`
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
+  color: ${({ theme }) => theme.colorTextTertiary};
   margin-top: 4px;
   padding: 0 4px;
 `;
 
-const TypingIndicator = styled.div`
+const TypingIndicator = styled.div<{ $isDark: boolean }>`
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 16px 16px 16px 4px;
+  background: ${({ theme, $isDark }) => $isDark ? theme.colorFillSecondary : theme.colorBgElevated};
+  border: 1px solid ${({ theme }) => theme.colorBorderSecondary};
+  border-radius: ${({ theme }) => `${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusSM}px`};
   width: fit-content;
 
   span {
     width: 8px;
     height: 8px;
-    background: rgba(255, 255, 255, 0.5);
+    background: ${({ theme }) => theme.colorTextTertiary};
     border-radius: 50%;
     animation: ${typingDots} 1.4s ease-in-out infinite;
     &:nth-of-type(2) { animation-delay: 0.2s; }
@@ -436,10 +452,10 @@ const TypingIndicator = styled.div`
   }
 `;
 
-const InputContainer = styled.div`
+const InputContainer = styled.div<{ $isDark: boolean }>`
   padding: 16px 20px 20px;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: ${({ theme, $isDark }) => $isDark ? theme.colorBgContainer : theme.colorBgLayout};
+  border-top: 1px solid ${({ theme }) => theme.colorBorderSecondary};
 `;
 
 const InputWrapper = styled.div`
@@ -448,37 +464,37 @@ const InputWrapper = styled.div`
   align-items: flex-end;
 `;
 
-const TextInput = styled.textarea`
+const TextInput = styled.textarea<{ $isDark: boolean }>`
   flex: 1;
   min-height: 44px;
   max-height: 120px;
   padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
-  font-size: 14px;
+  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
+  border: 1px solid ${({ theme }) => theme.colorBorder};
+  background: ${({ theme, $isDark }) => $isDark ? theme.colorFillTertiary : theme.colorBgContainer};
+  color: ${({ theme }) => theme.colorText};
+  font-size: ${({ theme }) => theme.fontSize}px;
   font-family: inherit;
   resize: none;
   outline: none;
   transition: all 0.2s ease;
 
-  &::placeholder { color: rgba(255, 255, 255, 0.4); }
+  &::placeholder { color: ${({ theme }) => theme.colorTextPlaceholder}; }
   &:focus {
-    border-color: rgba(59, 130, 246, 0.6);
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    border-color: ${({ theme }) => theme.colorPrimary};
+    background: ${({ theme, $isDark }) => $isDark ? theme.colorFillSecondary : theme.colorBgContainer};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colorPrimaryBg};
   }
 `;
 
 const SendButton = styled.button<{ disabled: boolean }>`
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
   border: none;
-  background: ${({ disabled }) => disabled
-    ? 'rgba(255, 255, 255, 0.1)'
-    : 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)'};
+  background: ${({ disabled, theme }) => disabled
+    ? theme.colorFillSecondary
+    : `linear-gradient(135deg, ${theme.colorPrimary} 0%, #8b5cf6 100%)`};
   cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
   display: flex;
   align-items: center;
@@ -486,13 +502,16 @@ const SendButton = styled.button<{ disabled: boolean }>`
   transition: all 0.2s ease;
   flex-shrink: 0;
 
-  &:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+  &:hover:not(:disabled) { 
+    transform: scale(1.05); 
+    box-shadow: 0 4px 12px ${({ theme }) => theme.colorPrimary}66; 
+  }
   &:active:not(:disabled) { transform: scale(0.95); }
 
   svg {
     width: 20px;
     height: 20px;
-    color: ${({ disabled }) => disabled ? 'rgba(255, 255, 255, 0.3)' : 'white'};
+    color: ${({ disabled, theme }) => disabled ? theme.colorTextDisabled : 'white'};
     transform: rotate(-45deg);
   }
 `;
@@ -500,10 +519,19 @@ const SendButton = styled.button<{ disabled: boolean }>`
 const WelcomeMessage = styled.div`
   text-align: center;
   padding: 20px;
-  color: rgba(255, 255, 255, 0.7);
+  color: ${({ theme }) => theme.colorTextSecondary};
 
-  h4 { font-size: 16px; font-weight: 600; color: white; margin: 0 0 8px; }
-  p { font-size: 13px; line-height: 1.5; margin: 0 0 16px; }
+  h4 { 
+    font-size: ${({ theme }) => theme.fontSizeLG}px; 
+    font-weight: ${({ theme }) => theme.fontWeightStrong}; 
+    color: ${({ theme }) => theme.colorTextHeading}; 
+    margin: 0 0 8px; 
+  }
+  p { 
+    font-size: ${({ theme }) => theme.fontSizeSM}px; 
+    line-height: 1.5; 
+    margin: 0 0 16px; 
+  }
 `;
 
 const SuggestionChips = styled.div`
@@ -516,27 +544,27 @@ const SuggestionChips = styled.div`
 const SuggestionChip = styled.button`
   padding: 8px 14px;
   border-radius: 20px;
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  background: rgba(59, 130, 246, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 12px;
+  border: 1px solid ${({ theme }) => theme.colorPrimaryBorder};
+  background: ${({ theme }) => theme.colorPrimaryBg};
+  color: ${({ theme }) => theme.colorPrimaryText};
+  font-size: ${({ theme }) => theme.fontSizeSM}px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.6);
+    background: ${({ theme }) => theme.colorPrimaryBgHover};
+    border-color: ${({ theme }) => theme.colorPrimary};
     transform: translateY(-1px);
   }
 `;
 
 const ErrorMessage = styled.div`
   padding: 12px 16px;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 12px;
-  color: #fca5a5;
-  font-size: 13px;
+  background: ${({ theme }) => theme.colorErrorBg};
+  border: 1px solid ${({ theme }) => theme.colorErrorBorder};
+  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
+  color: ${({ theme }) => theme.colorErrorText};
+  font-size: ${({ theme }) => theme.fontSizeSM}px;
   animation: ${fadeIn} 0.3s ease;
   display: flex;
   align-items: center;
@@ -545,21 +573,18 @@ const ErrorMessage = styled.div`
   button {
     margin-left: auto;
     padding: 4px 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: ${({ theme }) => theme.borderRadius}px;
+    border: 1px solid ${({ theme }) => theme.colorBorder};
     background: transparent;
-    color: white;
-    font-size: 12px;
+    color: ${({ theme }) => theme.colorText};
+    font-size: ${({ theme }) => theme.fontSizeSM}px;
     cursor: pointer;
-    &:hover { background: rgba(255, 255, 255, 0.1); }
+    &:hover { background: ${({ theme }) => theme.colorFillSecondary}; }
   }
 `;
 
 // SVG Icons as components
 const AIIcon: FC = () => (
-  // <svg viewBox="0 0 24 24" fill="none">
-  //   <path d="M12 2L13.09 8.26L18 6L15.74 10.91L22 12L15.74 13.09L18 18L13.09 15.74L12 22L10.91 15.74L6 18L8.26 13.09L2 12L8.26 10.91L6 6L10.91 8.26L12 2Z" fill="currentColor"/>
-  // </svg>
   <svg viewBox="0 0 124 149" width="24" height="29" overflow="hidden">
   <defs><clipPath id="clip0"><rect x="239" y="733" width="124" height="149"/></clipPath></defs><g clip-path="url(#clip0)" transform="translate(-239 -733)"><path d="M25.1285 98.1167C20.4225 102.912 20.1561 110.104 24.4182 115.964 24.9509 116.675 25.5725 117.385 26.1941 118.273 22.4647 120.404 18.6466 120.67 14.6509 119.605 6.39313 117.207 0.355174 109.127 0 99.9814-0.26638 93.7658 1.59828 88.0831 4.52846 82.6667 7.10347 77.9606 10.3 73.6985 14.1182 69.9692 27.8811 56.2062 40.4898 43.6864 54.2528 30.0122 54.3416 29.9234 52.1217 56.9166 51.2338 72.1003 51.2338 72.1003 32.9424 90.3029 25.1285 98.2055Z" fill="#E9A69B" transform="matrix(1 0 0 1.05141 239.2 733)"/><path d="M123.6 0C123.245 2.30863 121.381 15.3613 119.516 28.0587 117.119 44.4855 108.328 59.4028 95.0977 69.5252 74.9416 84.9753 47.0605 106.286 45.0183 107.44 46.6165 96.3409 49.3691 84.2649 50.8786 73.5209L51.2338 71.9227C75.3856 47.9484 99.3598 24.1518 123.6 0Z" fill="#DA6A59" transform="matrix(1 0 0 1.05141 239.2 733)"/><path d="M98.3831 141.714C85.4193 141.714 72.4554 141.892 59.4916 141.714 52.9209 141.625 47.1493 138.873 42.3545 134.344 37.2044 129.372 32.232 124.311 27.082 119.25 26.3716 118.628 26.2829 118.273 27.2596 117.651 32.9424 114.455 38.5363 111.258 44.1303 108.062 44.7519 107.706 45.1071 107.706 45.7286 108.062 63.1321 119.161 98.3831 141.714 98.2943 141.803Z" fill="#DA6A59" transform="matrix(1 0 0 1.05141 239.2 733)"/></g>
   </svg>
@@ -597,6 +622,14 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   modelName = DEFAULT_MODEL,
   enableStreaming = true,
 }) => {
+  // Get theme from Superset
+  const theme = useTheme();
+  
+  // Detect if dark mode based on colorBgBase
+  const isDark = useMemo(() => {
+    return theme.colorBgBase === '#000' || theme.colorBgBase === '#000000';
+  }, [theme.colorBgBase]);
+
   // Initialize state from localStorage
   const [isOpen, setIsOpen] = useState<boolean>(() => 
     loadFromStorage(STORAGE_KEYS.IS_OPEN(dashboardId), false)
@@ -641,7 +674,6 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   }, []);
 
   const buildSystemPrompt = useCallback((): string => {
-    // return `You are a helpful AI assistant for Apache Superset dashboards. You are currently helping the user with dashboard ID: ${dashboardId}, titled "${dashboardTitle}".
     return `Current Dashboard ID: ${dashboardId}`;
   }, [dashboardId, dashboardTitle]);
 
@@ -724,7 +756,6 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
         .map(msg => ({ role: msg.role, content: msg.content }));
 
       const requestMessages: ChatCompletionMessage[] = [
-        // { role: 'system', content: buildSystemPrompt() },
         ...conversationHistory,
         { role: 'user', content: userMessage + "\n\n" + buildSystemPrompt() },
       ];
@@ -852,8 +883,8 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
 
   return (
     <ChatbotContainer>
-      <ChatWindow isOpen={isOpen}>
-        <ChatHeader>
+      <ChatWindow isOpen={isOpen} $isDark={isDark}>
+        <ChatHeader $isDark={isDark}>
           <AvatarContainer>
             <AIIcon />
           </AvatarContainer>
@@ -897,7 +928,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
           ) : (
             messages.map(message => (
               <MessageWrapper key={message.id} isUser={message.role === 'user'}>
-                <MessageBubble isUser={message.role === 'user'}>
+                <MessageBubble isUser={message.role === 'user'} $isDark={isDark}>
                   {message.role === 'user' ? (
                     <UserMessageContent>{message.content}</UserMessageContent>
                   ) : (
@@ -914,7 +945,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
 
           {isLoading && !messages.some(m => m.isStreaming) && (
             <MessageWrapper isUser={false}>
-              <TypingIndicator>
+              <TypingIndicator $isDark={isDark}>
                 <span /><span /><span />
               </TypingIndicator>
             </MessageWrapper>
@@ -930,7 +961,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
           <div ref={messagesEndRef} />
         </MessagesContainer>
 
-        <InputContainer>
+        <InputContainer $isDark={isDark}>
           <InputWrapper>
             <TextInput
               ref={inputRef}
@@ -940,6 +971,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
               placeholder={t('Create chart for...')}
               rows={1}
               disabled={isLoading}
+              $isDark={isDark}
             />
             {isLoading && messages.some(m => m.isStreaming) ? (
               <SendButton disabled={false} onClick={handleStopGeneration} aria-label={t('Stop')}>

@@ -16,49 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { FC, useEffect, useRef, useState, memo } from 'react';
+import { FC, useEffect, useRef, useState, memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import mermaid from 'mermaid';
-import { styled, keyframes } from '@apache-superset/core/ui';
-
-// Initialize mermaid with dark theme
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  securityLevel: 'loose',
-  fontFamily: 'inherit',
-  themeVariables: {
-    primaryColor: '#3b82f6',
-    primaryTextColor: '#fff',
-    primaryBorderColor: '#60a5fa',
-    lineColor: '#94a3b8',
-    secondaryColor: '#8b5cf6',
-    tertiaryColor: '#1e293b',
-    background: '#0f172a',
-    mainBkg: '#1e293b',
-    secondBkg: '#334155',
-    border1: '#475569',
-    border2: '#64748b',
-    arrowheadColor: '#94a3b8',
-    textColor: '#e2e8f0',
-    nodeTextColor: '#f1f5f9',
-  },
-});
+import { styled, keyframes, useTheme } from '@apache-superset/core/ui';
 
 // Mermaid diagram component
 interface MermaidDiagramProps {
   chart: string;
+  isDark: boolean;
 }
 
-const MermaidContainer = styled.div`
+const MermaidContainer = styled.div<{ $isDark: boolean }>`
   margin: 12px 0;
   padding: 16px;
-  background: rgba(15, 23, 42, 0.6);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: ${({ theme, $isDark }) => $isDark ? theme.colorFillTertiary : theme.colorBgLayout};
+  border-radius: ${({ theme }) => theme.borderRadius}px;
+  border: 1px solid ${({ theme }) => theme.colorBorderSecondary};
   overflow-x: auto;
 
   svg {
@@ -73,20 +50,59 @@ const MermaidContainer = styled.div`
 `;
 
 const MermaidError = styled.div`
-  color: #f87171;
-  font-size: 12px;
+  color: ${({ theme }) => theme.colorError};
+  font-size: ${({ theme }) => theme.fontSizeSM}px;
   padding: 8px;
-  background: rgba(239, 68, 68, 0.1);
-  border-radius: 4px;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: ${({ theme }) => theme.colorErrorBg};
+  border-radius: ${({ theme }) => theme.borderRadius}px;
+  border: 1px solid ${({ theme }) => theme.colorErrorBorder};
 `;
 
-const MermaidDiagram: FC<MermaidDiagramProps> = memo(({ chart }) => {
+const MermaidDiagram: FC<MermaidDiagramProps> = memo(({ chart, isDark }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [svg, setSvg] = useState<string>('');
 
   useEffect(() => {
+    // Re-initialize mermaid when theme changes
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isDark ? 'dark' : 'default',
+      securityLevel: 'loose',
+      fontFamily: 'inherit',
+      themeVariables: isDark ? {
+        primaryColor: '#3b82f6',
+        primaryTextColor: '#fff',
+        primaryBorderColor: '#60a5fa',
+        lineColor: '#94a3b8',
+        secondaryColor: '#8b5cf6',
+        tertiaryColor: '#1e293b',
+        background: '#0f172a',
+        mainBkg: '#1e293b',
+        secondBkg: '#334155',
+        border1: '#475569',
+        border2: '#64748b',
+        arrowheadColor: '#94a3b8',
+        textColor: '#e2e8f0',
+        nodeTextColor: '#f1f5f9',
+      } : {
+        primaryColor: '#2893B3',
+        primaryTextColor: '#000',
+        primaryBorderColor: '#2893B3',
+        lineColor: '#64748b',
+        secondaryColor: '#8b5cf6',
+        tertiaryColor: '#f5f5f5',
+        background: '#ffffff',
+        mainBkg: '#ffffff',
+        secondBkg: '#f5f5f5',
+        border1: '#d9d9d9',
+        border2: '#e5e5e5',
+        arrowheadColor: '#64748b',
+        textColor: 'rgba(0,0,0,0.88)',
+        nodeTextColor: 'rgba(0,0,0,0.88)',
+      },
+    });
+
     const renderDiagram = async () => {
       if (!chart.trim()) return;
 
@@ -103,11 +119,13 @@ const MermaidDiagram: FC<MermaidDiagramProps> = memo(({ chart }) => {
     };
 
     renderDiagram();
-  }, [chart]);
+  }, [chart, isDark]);
+
+  const theme = useTheme();
 
   if (error) {
     return (
-      <MermaidContainer>
+      <MermaidContainer $isDark={isDark}>
         <MermaidError>
           <strong>Diagram Error:</strong> {error}
           <pre style={{ marginTop: 8, fontSize: 11, opacity: 0.7 }}>{chart}</pre>
@@ -118,8 +136,8 @@ const MermaidDiagram: FC<MermaidDiagramProps> = memo(({ chart }) => {
 
   if (!svg) {
     return (
-      <MermaidContainer>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
+      <MermaidContainer $isDark={isDark}>
+        <div style={{ color: theme.colorTextTertiary, fontSize: theme.fontSizeSM }}>
           Rendering diagram...
         </div>
       </MermaidContainer>
@@ -127,7 +145,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = memo(({ chart }) => {
   }
 
   return (
-    <MermaidContainer>
+    <MermaidContainer $isDark={isDark}>
       <div
         ref={containerRef}
         className="mermaid"
@@ -140,17 +158,17 @@ const MermaidDiagram: FC<MermaidDiagramProps> = memo(({ chart }) => {
 MermaidDiagram.displayName = 'MermaidDiagram';
 
 // Styled markdown container
-const MarkdownContainer = styled.div`
-  font-size: 14px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.9);
+const MarkdownContainer = styled.div<{ $isDark: boolean }>`
+  font-size: ${({ theme }) => theme.fontSize}px;
+  line-height: ${({ theme }) => theme.lineHeight};
+  color: ${({ theme }) => theme.colorText};
 
   /* Headings */
   h1, h2, h3, h4, h5, h6 {
     margin: 16px 0 8px 0;
-    font-weight: 600;
+    font-weight: ${({ theme }) => theme.fontWeightStrong};
     line-height: 1.3;
-    color: #fff;
+    color: ${({ theme }) => theme.colorTextHeading};
   }
 
   h1 { font-size: 1.4em; }
@@ -165,11 +183,11 @@ const MarkdownContainer = styled.div`
 
   /* Links */
   a {
-    color: #60a5fa;
+    color: ${({ theme }) => theme.colorLink};
     text-decoration: none;
     &:hover {
       text-decoration: underline;
-      color: #93c5fd;
+      color: ${({ theme }) => theme.colorLinkHover};
     }
   }
 
@@ -200,10 +218,10 @@ const MarkdownContainer = styled.div`
   blockquote {
     margin: 12px 0;
     padding: 8px 16px;
-    border-left: 3px solid #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
-    border-radius: 0 4px 4px 0;
-    color: rgba(255, 255, 255, 0.8);
+    border-left: 3px solid ${({ theme }) => theme.colorPrimary};
+    background: ${({ theme }) => theme.colorPrimaryBg};
+    border-radius: 0 ${({ theme }) => theme.borderRadius}px ${({ theme }) => theme.borderRadius}px 0;
+    color: ${({ theme }) => theme.colorTextSecondary};
 
     p {
       margin: 4px 0;
@@ -212,23 +230,23 @@ const MarkdownContainer = styled.div`
 
   /* Inline code */
   code:not(pre code) {
-    background: rgba(255, 255, 255, 0.1);
+    background: ${({ theme, $isDark }) => $isDark ? theme.colorFillSecondary : theme.colorFillTertiary};
     padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    border-radius: ${({ theme }) => theme.borderRadius}px;
+    font-family: ${({ theme }) => theme.fontFamilyCode};
     font-size: 0.9em;
-    color: #f472b6;
+    color: ${({ theme }) => theme.colorError};
   }
 
   /* Code blocks */
   pre {
     margin: 12px 0;
-    border-radius: 8px;
+    border-radius: ${({ theme }) => theme.borderRadius}px;
     overflow: hidden;
 
     code {
-      font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
-      font-size: 13px;
+      font-family: ${({ theme }) => theme.fontFamilyCode};
+      font-size: ${({ theme }) => theme.fontSizeSM}px;
     }
   }
 
@@ -237,59 +255,59 @@ const MarkdownContainer = styled.div`
     width: 100%;
     margin: 12px 0;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: ${({ theme }) => theme.fontSizeSM}px;
   }
 
   th, td {
     padding: 8px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid ${({ theme }) => theme.colorBorderSecondary};
     text-align: left;
   }
 
   th {
-    background: rgba(59, 130, 246, 0.2);
-    font-weight: 600;
-    color: #fff;
+    background: ${({ theme }) => theme.colorPrimaryBg};
+    font-weight: ${({ theme }) => theme.fontWeightStrong};
+    color: ${({ theme }) => theme.colorTextHeading};
   }
 
   tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.03);
+    background: ${({ theme }) => theme.colorFillAlter};
   }
 
   tr:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: ${({ theme }) => theme.colorFillTertiary};
   }
 
   /* Horizontal rule */
   hr {
     margin: 16px 0;
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid ${({ theme }) => theme.colorBorderSecondary};
   }
 
   /* Images */
   img {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
+    border-radius: ${({ theme }) => theme.borderRadius}px;
     margin: 8px 0;
   }
 
   /* Task lists (GFM) */
   input[type="checkbox"] {
     margin-right: 8px;
-    accent-color: #3b82f6;
+    accent-color: ${({ theme }) => theme.colorPrimary};
   }
 
   /* Strikethrough */
   del {
-    color: rgba(255, 255, 255, 0.5);
+    color: ${({ theme }) => theme.colorTextTertiary};
   }
 
   /* Strong and emphasis */
   strong {
-    font-weight: 600;
-    color: #fff;
+    font-weight: ${({ theme }) => theme.fontWeightStrong};
+    color: ${({ theme }) => theme.colorTextHeading};
   }
 
   em {
@@ -307,39 +325,39 @@ const CodeBlockWrapper = styled.div`
   }
 `;
 
-const CopyButton = styled.button`
+const CopyButton = styled.button<{ $isDark: boolean }>`
   position: absolute;
   top: 8px;
   right: 8px;
   padding: 4px 8px;
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  background: ${({ theme }) => theme.colorFillSecondary};
+  border: 1px solid ${({ theme }) => theme.colorBorder};
+  border-radius: ${({ theme }) => theme.borderRadius}px;
+  color: ${({ theme }) => theme.colorTextSecondary};
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s ease;
   z-index: 10;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
+    background: ${({ theme }) => theme.colorFillContentHover};
+    color: ${({ theme }) => theme.colorText};
   }
 
   &.copied {
-    background: rgba(34, 197, 94, 0.3);
-    border-color: rgba(34, 197, 94, 0.5);
-    color: #4ade80;
+    background: ${({ theme }) => theme.colorSuccessBg};
+    border-color: ${({ theme }) => theme.colorSuccessBorder};
+    color: ${({ theme }) => theme.colorSuccess};
   }
 `;
 
-const LanguageTag = styled.span`
+const LanguageTag = styled.span<{ $isDark: boolean }>`
   position: absolute;
   top: 8px;
   left: 12px;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
+  color: ${({ theme }) => theme.colorTextTertiary};
   text-transform: uppercase;
   letter-spacing: 0.5px;
   z-index: 10;
@@ -348,10 +366,12 @@ const LanguageTag = styled.span`
 interface CodeBlockProps {
   language: string;
   value: string;
+  isDark: boolean;
 }
 
-const CodeBlock: FC<CodeBlockProps> = memo(({ language, value }) => {
+const CodeBlock: FC<CodeBlockProps> = memo(({ language, value, isDark }) => {
   const [copied, setCopied] = useState(false);
+  const theme = useTheme();
 
   const handleCopy = async () => {
     try {
@@ -365,33 +385,34 @@ const CodeBlock: FC<CodeBlockProps> = memo(({ language, value }) => {
 
   // Check if it's a mermaid diagram
   if (language === 'mermaid') {
-    return <MermaidDiagram chart={value} />;
+    return <MermaidDiagram chart={value} isDark={isDark} />;
   }
 
   return (
     <CodeBlockWrapper>
-      {language && <LanguageTag>{language}</LanguageTag>}
+      {language && <LanguageTag $isDark={isDark}>{language}</LanguageTag>}
       <CopyButton
         className={`copy-button ${copied ? 'copied' : ''}`}
         onClick={handleCopy}
+        $isDark={isDark}
       >
         {copied ? '✓ Copied' : 'Copy'}
       </CopyButton>
       <SyntaxHighlighter
         language={language || 'text'}
-        style={oneDark}
+        style={isDark ? oneDark : oneLight}
         customStyle={{
           margin: 0,
-          borderRadius: 8,
+          borderRadius: theme.borderRadius,
           padding: '32px 16px 16px 16px',
-          background: 'rgba(15, 23, 42, 0.8)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: isDark ? theme.colorFillTertiary : theme.colorBgLayout,
+          border: `1px solid ${theme.colorBorderSecondary}`,
         }}
         showLineNumbers={value.split('\n').length > 3}
         lineNumberStyle={{
           minWidth: '2.5em',
           paddingRight: '1em',
-          color: 'rgba(255, 255, 255, 0.25)',
+          color: theme.colorTextTertiary,
           userSelect: 'none',
         }}
       >
@@ -410,8 +431,15 @@ interface ChatbotMarkdownProps {
 }
 
 const ChatbotMarkdown: FC<ChatbotMarkdownProps> = ({ content, isStreaming }) => {
+  const theme = useTheme();
+  
+  // Detect if dark mode based on colorBgBase
+  const isDark = useMemo(() => {
+    return theme.colorBgBase === '#000' || theme.colorBgBase === '#000000';
+  }, [theme.colorBgBase]);
+
   return (
-    <MarkdownContainer>
+    <MarkdownContainer $isDark={isDark}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -421,7 +449,7 @@ const ChatbotMarkdown: FC<ChatbotMarkdownProps> = ({ content, isStreaming }) => 
             const value = String(children).replace(/\n$/, '');
 
             if (!inline && (match || value.includes('\n'))) {
-              return <CodeBlock language={language} value={value} />;
+              return <CodeBlock language={language} value={value} isDark={isDark} />;
             }
 
             return (
