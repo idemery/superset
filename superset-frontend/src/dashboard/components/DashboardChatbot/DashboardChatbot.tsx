@@ -38,6 +38,14 @@ interface Message {
   isStreaming?: boolean;
 }
 
+// Serializable version of Message for localStorage
+interface StoredMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string; // ISO string
+}
+
 interface DashboardChatbotProps {
   dashboardId: number;
   dashboardTitle?: string;
@@ -60,6 +68,64 @@ const DEFAULT_LLM_API_URL = 'http://localhost:8111/v1/chat/completions';
 // const DEFAULT_LLM_API_KEY = 'http://172.20.30.18:33821/v1__nothing__qwen3-coder:30b-a3b-fp16__http://host.docker.internal:8088__admin__admin';
 const DEFAULT_LLM_API_KEY = 'http://host.docker.internal:11434/v1__nothing__Qwen3-Coder:latest__http://host.docker.internal:8088__admin__admin';
 const DEFAULT_MODEL = 'superset';
+
+// Local storage keys
+const STORAGE_KEYS = {
+  MESSAGES: (dashboardId: number) => `superset_chatbot_messages_${dashboardId}`,
+  IS_OPEN: (dashboardId: number) => `superset_chatbot_open_${dashboardId}`,
+};
+
+// Helper functions for local storage
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (err) {
+    console.error('Error loading from localStorage:', err);
+  }
+  return defaultValue;
+};
+
+const saveToStorage = <T,>(key: string, value: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.error('Error saving to localStorage:', err);
+  }
+};
+
+const removeFromStorage = (key: string): void => {
+  try {
+    localStorage.removeItem(key);
+  } catch (err) {
+    console.error('Error removing from localStorage:', err);
+  }
+};
+
+// Convert Message to StoredMessage for localStorage
+const serializeMessages = (messages: Message[]): StoredMessage[] => {
+  return messages
+    .filter(msg => !msg.isStreaming) // Don't store streaming messages
+    .map(msg => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.content,
+      timestamp: msg.timestamp.toISOString(),
+    }));
+};
+
+// Convert StoredMessage back to Message
+const deserializeMessages = (stored: StoredMessage[]): Message[] => {
+  return stored.map(msg => ({
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+    isStreaming: false,
+  }));
+};
 
 // Animations
 const pulseGlow = keyframes`
@@ -257,7 +323,12 @@ const ConnectionStatus = styled.span<{ connected: boolean }>`
   }
 `;
 
-const CloseButton = styled.button`
+const HeaderButtons = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const HeaderButton = styled.button`
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -270,6 +341,15 @@ const CloseButton = styled.button`
   transition: all 0.2s ease;
   &:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
   svg { width: 16px; height: 16px; color: rgba(255, 255, 255, 0.7); }
+`;
+
+const CloseButton = styled(HeaderButton)``;
+
+const ResetButton = styled(HeaderButton)`
+  &:hover {
+    background: rgba(239, 68, 68, 0.3);
+    svg { color: #fca5a5; }
+  }
 `;
 
 const MessagesContainer = styled.div`
@@ -497,6 +577,13 @@ const CloseIcon: FC = () => (
   </svg>
 );
 
+const ResetIcon: FC = () => (
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M3 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 // Helpers
 const generateId = (): string => `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 const formatTime = (date: Date): string => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -510,8 +597,14 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   modelName = DEFAULT_MODEL,
   enableStreaming = true,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Initialize state from localStorage
+  const [isOpen, setIsOpen] = useState<boolean>(() => 
+    loadFromStorage(STORAGE_KEYS.IS_OPEN(dashboardId), false)
+  );
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const stored = loadFromStorage<StoredMessage[]>(STORAGE_KEYS.MESSAGES(dashboardId), []);
+    return deserializeMessages(stored);
+  });
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -528,6 +621,20 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
   useEffect(() => { if (isOpen && inputRef.current) inputRef.current.focus(); }, [isOpen]);
 
+  // Persist isOpen state to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.IS_OPEN(dashboardId), isOpen);
+  }, [isOpen, dashboardId]);
+
+  // Persist messages to localStorage (debounced to avoid too frequent writes)
+  useEffect(() => {
+    // Don't save if there are streaming messages
+    if (messages.some(m => m.isStreaming)) return;
+    
+    const serialized = serializeMessages(messages);
+    saveToStorage(STORAGE_KEYS.MESSAGES(dashboardId), serialized);
+  }, [messages, dashboardId]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => { abortControllerRef.current?.abort(); };
@@ -537,6 +644,21 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
     // return `You are a helpful AI assistant for Apache Superset dashboards. You are currently helping the user with dashboard ID: ${dashboardId}, titled "${dashboardTitle}".
     return `Current Dashboard ID: ${dashboardId}`;
   }, [dashboardId, dashboardTitle]);
+
+  // Reset chat history
+  const handleResetChat = useCallback(() => {
+    // Abort any ongoing request
+    abortControllerRef.current?.abort();
+    
+    // Clear messages
+    setMessages([]);
+    setInputValue('');
+    setError(null);
+    setIsLoading(false);
+    
+    // Remove from localStorage
+    removeFromStorage(STORAGE_KEYS.MESSAGES(dashboardId));
+  }, [dashboardId]);
 
   // Streaming response handler
   const handleStreamingResponse = useCallback(
@@ -745,9 +867,18 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
               {t('Dashboard #%s', dashboardId)}
             </HeaderSubtitle>
           </HeaderInfo>
-          <CloseButton onClick={() => setIsOpen(false)} aria-label={t('Close')}>
-            <CloseIcon />
-          </CloseButton>
+          <HeaderButtons>
+            <ResetButton 
+              onClick={handleResetChat} 
+              aria-label={t('New conversation')}
+              title={t('Start new conversation')}
+            >
+              <ResetIcon />
+            </ResetButton>
+            <CloseButton onClick={() => setIsOpen(false)} aria-label={t('Close')}>
+              <CloseIcon />
+            </CloseButton>
+          </HeaderButtons>
         </ChatHeader>
 
         <MessagesContainer>
