@@ -723,7 +723,7 @@ COMMON_BOOTSTRAP_OVERRIDES_FUNC: Callable[  # noqa: E731
 #     }]
 
 # This is merely a default
-EXTRA_CATEGORICAL_COLOR_SCHEMES: list[dict[str, Any]] = []
+# EXTRA_CATEGORICAL_COLOR_SCHEMES: list[dict[str, Any]] = []
 
 # -----------------------------------------------------------------------------
 # Theme System Configuration
@@ -805,7 +805,11 @@ ENABLE_UI_THEME_ADMINISTRATION = True  # Allows admins to set system themes via 
 #     "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
 #     "https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap",
 # ]
-CUSTOM_FONT_URLS: list[str] = []
+# CUSTOM_FONT_URLS: list[str] = []
+CUSTOM_FONT_URLS = [
+    "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap",
+]
 
 # ---------------------------------------------------
 # EXTRA_SEQUENTIAL_COLOR_SCHEMES is used for adding custom sequential color schemes
@@ -822,7 +826,150 @@ CUSTOM_FONT_URLS: list[str] = []
 #     }]
 
 # This is merely a default
-EXTRA_SEQUENTIAL_COLOR_SCHEMES: list[dict[str, Any]] = []
+# EXTRA_SEQUENTIAL_COLOR_SCHEMES: list[dict[str, Any]] = []
+
+
+# Categorical color scheme (for pie charts, bar charts, etc.)
+EXTRA_CATEGORICAL_COLOR_SCHEMES = [
+    {
+        "id": "shdb_brand",
+        "description": "Shaheen brand colors - coral, navy, and peach variations",
+        "label": "Shaheen Brand",
+        "isDefault": True,
+        "colors": [
+            "#da6a59",  # Coral (primary from logo)
+            "#172d67",  # Navy (from logo text)
+            "#e9a69b",  # Peach (from logo)
+            "#2a4080",  # Navy lighter
+            "#c45a4b",  # Coral darker
+            "#5c73a7",  # Navy muted
+            "#f2c4bd",  # Peach light
+            "#101f4a",  # Navy deep
+            "#e88a7d",  # Coral light
+            "#8a9bc7",  # Navy pale
+            "#a84539",  # Coral deep
+            "#3d5280",  # Navy medium
+            "#f5d9d4",  # Peach pale
+            "#6b89b8",  # Navy soft
+            "#d4574a",  # Coral vivid
+        ]
+    },
+    {
+        "id": "shdb_coral_focus",
+        "description": "Coral-forward palette with navy accents",
+        "label": "Shaheen Coral Focus",
+        "isDefault": False,
+        "colors": [
+            "#da6a59",  # Coral primary
+            "#e9a69b",  # Peach
+            "#c45a4b",  # Coral dark
+            "#f2c4bd",  # Peach light
+            "#e88a7d",  # Coral light
+            "#a84539",  # Coral deep
+            "#f5d9d4",  # Peach pale
+            "#d4574a",  # Coral vivid
+            "#172d67",  # Navy accent
+            "#5c73a7",  # Navy muted
+        ]
+    },
+    {
+        "id": "shdb_navy_focus",
+        "description": "Navy-forward palette with coral accents",
+        "label": "Shaheen Navy Focus",
+        "isDefault": False,
+        "colors": [
+            "#172d67",  # Navy primary
+            "#2a4080",  # Navy lighter
+            "#5c73a7",  # Navy muted
+            "#101f4a",  # Navy deep
+            "#8a9bc7",  # Navy pale
+            "#3d5280",  # Navy medium
+            "#6b89b8",  # Navy soft
+            "#da6a59",  # Coral accent
+            "#e9a69b",  # Peach accent
+            "#c45a4b",  # Coral dark accent
+        ]
+    },
+    {
+        "id": "shdb_alternating",
+        "description": "Alternating coral and navy for high contrast",
+        "label": "Shaheen High Contrast",
+        "isDefault": False,
+        "colors": [
+            "#da6a59",  # Coral
+            "#172d67",  # Navy
+            "#e9a69b",  # Peach
+            "#2a4080",  # Navy light
+            "#c45a4b",  # Coral dark
+            "#5c73a7",  # Navy muted
+            "#e88a7d",  # Coral light
+            "#3d5280",  # Navy medium
+            "#f2c4bd",  # Peach light
+            "#101f4a",  # Navy deep
+        ]
+    },
+]
+
+# Sequential color schemes (for heatmaps, choropleth maps, etc.)
+EXTRA_SEQUENTIAL_COLOR_SCHEMES = [
+    {
+        "id": "shdb_coral_seq",
+        "description": "Coral gradient from light to dark",
+        "label": "Shaheen Coral Gradient",
+        "isDefault": False,
+        "isDiverging": False,
+        "colors": [
+            "#fdf0ee",  # Lightest
+            "#f5d9d4",
+            "#f2c4bd",
+            "#e9a69b",
+            "#e88a7d",
+            "#da6a59",
+            "#c45a4b",
+            "#a84539",
+            "#8a3630",  # Darkest
+        ]
+    },
+    {
+        "id": "shdb_navy_seq",
+        "description": "Navy gradient from light to dark",
+        "label": "Shaheen Navy Gradient",
+        "isDefault": False,
+        "isDiverging": False,
+        "colors": [
+            "#e8ecf4",  # Lightest
+            "#d1d9e9",
+            "#b8c4dc",
+            "#8a9bc7",
+            "#6b89b8",
+            "#5c73a7",
+            "#3d5280",
+            "#2a4080",
+            "#172d67",
+            "#101f4a",  # Darkest
+        ]
+    },
+    {
+        "id": "shdb_diverging",
+        "description": "Diverging scale from coral through neutral to navy",
+        "label": "Shaheen Diverging (Coral ↔ Navy)",
+        "isDefault": False,
+        "isDiverging": True,
+        "colors": [
+            "#a84539",  # Coral dark (negative)
+            "#c45a4b",
+            "#da6a59",
+            "#e9a69b",
+            "#f5d9d4",
+            "#f5f5f5",  # Neutral midpoint
+            "#d1d9e9",
+            "#8a9bc7",
+            "#5c73a7",
+            "#2a4080",
+            "#172d67",  # Navy (positive)
+        ]
+    },
+]
 
 # User used to execute cache warmup tasks
 # By default, the cache is warmed up using the primary owner. To fall back to using
@@ -1918,7 +2065,9 @@ TALISMAN_CONFIG = {
         "style-src": [
             "'self'",
             "'unsafe-inline'",
+            "https://fonts.googleapis.com"
         ],
+        "font-src": ["'self'", "https://fonts.gstatic.com"],
         "script-src": ["'self'", "'strict-dynamic'"],
     },
     "content_security_policy_nonce_in": ["script-src"],
@@ -1957,7 +2106,9 @@ TALISMAN_DEV_CONFIG = {
         "style-src": [
             "'self'",
             "'unsafe-inline'",
+            "https://fonts.googleapis.com"
         ],
+        "font-src": ["'self'", "https://fonts.gstatic.com"],
         "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
     },
     "content_security_policy_nonce_in": ["script-src"],

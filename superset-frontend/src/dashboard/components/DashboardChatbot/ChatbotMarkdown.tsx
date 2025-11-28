@@ -363,13 +363,32 @@ const LanguageTag = styled.span<{ $isDark: boolean }>`
   z-index: 10;
 `;
 
+// Placeholder shown while mermaid diagram is streaming
+const MermaidPlaceholder = styled.div<{ $isDark: boolean }>`
+  margin: 12px 0;
+  padding: 16px;
+  background: ${({ theme, $isDark }) => $isDark ? theme.colorFillTertiary : theme.colorBgLayout};
+  border-radius: ${({ theme }) => theme.borderRadius}px;
+  border: 1px solid ${({ theme }) => theme.colorBorderSecondary};
+  color: ${({ theme }) => theme.colorTextTertiary};
+  font-size: ${({ theme }) => theme.fontSizeSM}px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &::before {
+    content: '📊';
+  }
+`;
+
 interface CodeBlockProps {
   language: string;
   value: string;
   isDark: boolean;
+  isStreaming?: boolean;
 }
 
-const CodeBlock: FC<CodeBlockProps> = memo(({ language, value, isDark }) => {
+const CodeBlock: FC<CodeBlockProps> = memo(({ language, value, isDark, isStreaming }) => {
   const [copied, setCopied] = useState(false);
   const theme = useTheme();
 
@@ -383,8 +402,15 @@ const CodeBlock: FC<CodeBlockProps> = memo(({ language, value, isDark }) => {
     }
   };
 
-  // Check if it's a mermaid diagram
+  // Check if it's a mermaid diagram - defer rendering until streaming is complete
   if (language === 'mermaid') {
+    if (isStreaming) {
+      return (
+        <MermaidPlaceholder $isDark={isDark}>
+          Generating diagram...
+        </MermaidPlaceholder>
+      );
+    }
     return <MermaidDiagram chart={value} isDark={isDark} />;
   }
 
@@ -449,7 +475,14 @@ const ChatbotMarkdown: FC<ChatbotMarkdownProps> = ({ content, isStreaming }) => 
             const value = String(children).replace(/\n$/, '');
 
             if (!inline && (match || value.includes('\n'))) {
-              return <CodeBlock language={language} value={value} isDark={isDark} />;
+              return (
+                <CodeBlock 
+                  language={language} 
+                  value={value} 
+                  isDark={isDark} 
+                  isStreaming={isStreaming}
+                />
+              );
             }
 
             return (

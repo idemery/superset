@@ -64,6 +64,22 @@ interface ChatCompletionMessage {
   content: string;
 }
 
+// Chat window size configurations
+type ChatSize = 'small' | 'medium' | 'large';
+
+interface SizeConfig {
+  width: number;
+  height: number;
+}
+
+const SIZE_CONFIGS: Record<ChatSize, SizeConfig> = {
+  small: { width: 360, height: 480 },
+  medium: { width: 420, height: 580 },
+  large: { width: 520, height: 720 },
+};
+
+const SIZE_ORDER: ChatSize[] = ['small', 'medium', 'large'];
+
 // Configuration - can be overridden via props or environment variables
 const DEFAULT_LLM_API_URL = 'http://localhost:8111/v1/chat/completions';
 const DEFAULT_LLM_API_KEY = 'http://host.docker.internal:11434/v1__nothing__Qwen3-Coder:latest__http://host.docker.internal:8088__admin__admin';
@@ -73,6 +89,7 @@ const DEFAULT_MODEL = 'superset';
 const STORAGE_KEYS = {
   MESSAGES: (dashboardId: number) => `superset_chatbot_messages_${dashboardId}`,
   IS_OPEN: (dashboardId: number) => `superset_chatbot_open_${dashboardId}`,
+  SIZE: (dashboardId: number) => `superset_chatbot_size_${dashboardId}`,
 };
 
 // Helper functions for local storage
@@ -248,12 +265,12 @@ const SparkleEffect = styled.span`
   &:nth-of-type(3) { top: 50%; left: 6px; animation-delay: 1s; }
 `;
 
-const ChatWindow = styled.div<{ isOpen: boolean; $isDark: boolean }>`
+const ChatWindow = styled.div<{ isOpen: boolean; $isDark: boolean; $width: number; $height: number }>`
   position: absolute;
   bottom: 76px;
   right: 0;
-  width: 420px;
-  height: 580px;
+  width: ${({ $width }) => $width}px;
+  height: ${({ $height }) => $height}px;
   background: ${({ theme, $isDark }) => $isDark 
     ? `linear-gradient(180deg, ${theme.colorBgContainer} 0%, ${theme.colorBgElevated} 100%)`
     : `linear-gradient(180deg, ${theme.colorBgContainer} 0%, ${theme.colorBgLayout} 100%)`};
@@ -264,6 +281,7 @@ const ChatWindow = styled.div<{ isOpen: boolean; $isDark: boolean }>`
   flex-direction: column;
   overflow: hidden;
   animation: ${slideUp} 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.3s ease, height 0.3s ease;
 `;
 
 const ChatHeader = styled.div<{ $isDark: boolean }>`
@@ -353,6 +371,13 @@ const ResetButton = styled(HeaderButton)`
   &:hover {
     background: ${({ theme }) => theme.colorErrorBg};
     svg { color: ${({ theme }) => theme.colorError}; }
+  }
+`;
+
+const ResizeButton = styled(HeaderButton)`
+  &:hover {
+    background: ${({ theme }) => theme.colorPrimaryBg};
+    svg { color: ${({ theme }) => theme.colorPrimary}; }
   }
 `;
 
@@ -609,6 +634,19 @@ const ResetIcon: FC = () => (
   </svg>
 );
 
+// Resize icon - expand/contract arrows
+const ResizeExpandIcon: FC = () => (
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const ResizeShrinkIcon: FC = () => (
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 // Helpers
 const generateId = (): string => `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 const formatTime = (date: Date): string => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -638,6 +676,9 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
     const stored = loadFromStorage<StoredMessage[]>(STORAGE_KEYS.MESSAGES(dashboardId), []);
     return deserializeMessages(stored);
   });
+  const [chatSize, setChatSize] = useState<ChatSize>(() =>
+    loadFromStorage(STORAGE_KEYS.SIZE(dashboardId), 'medium')
+  );
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -646,6 +687,9 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Get current size config
+  const sizeConfig = SIZE_CONFIGS[chatSize];
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -668,6 +712,11 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
     saveToStorage(STORAGE_KEYS.MESSAGES(dashboardId), serialized);
   }, [messages, dashboardId]);
 
+  // Persist chat size to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.SIZE(dashboardId), chatSize);
+  }, [chatSize, dashboardId]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => { abortControllerRef.current?.abort(); };
@@ -676,6 +725,15 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   const buildSystemPrompt = useCallback((): string => {
     return `Current Dashboard ID: ${dashboardId}`;
   }, [dashboardId, dashboardTitle]);
+
+  // Cycle through chat sizes
+  const handleResizeChat = useCallback(() => {
+    setChatSize(currentSize => {
+      const currentIndex = SIZE_ORDER.indexOf(currentSize);
+      const nextIndex = (currentIndex + 1) % SIZE_ORDER.length;
+      return SIZE_ORDER[nextIndex];
+    });
+  }, []);
 
   // Reset chat history
   const handleResetChat = useCallback(() => {
@@ -881,9 +939,29 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
     t('Help me add a filter'),
   ];
 
+  // Get the appropriate resize icon based on current size
+  const getResizeIcon = () => {
+    if (chatSize === 'large') {
+      return <ResizeShrinkIcon />;
+    }
+    return <ResizeExpandIcon />;
+  };
+
+  // Get tooltip text for resize button
+  const getResizeTooltip = () => {
+    const currentIndex = SIZE_ORDER.indexOf(chatSize);
+    const nextSize = SIZE_ORDER[(currentIndex + 1) % SIZE_ORDER.length];
+    return t('Switch to %s size', nextSize);
+  };
+
   return (
     <ChatbotContainer>
-      <ChatWindow isOpen={isOpen} $isDark={isDark}>
+      <ChatWindow 
+        isOpen={isOpen} 
+        $isDark={isDark}
+        $width={sizeConfig.width}
+        $height={sizeConfig.height}
+      >
         <ChatHeader $isDark={isDark}>
           <AvatarContainer>
             <AIIcon />
@@ -899,6 +977,13 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
             </HeaderSubtitle>
           </HeaderInfo>
           <HeaderButtons>
+            <ResizeButton 
+              onClick={handleResizeChat} 
+              aria-label={getResizeTooltip()}
+              title={getResizeTooltip()}
+            >
+              {getResizeIcon()}
+            </ResizeButton>
             <ResetButton 
               onClick={handleResetChat} 
               aria-label={t('New conversation')}
