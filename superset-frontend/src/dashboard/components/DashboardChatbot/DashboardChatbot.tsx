@@ -65,7 +65,8 @@ interface ChatCompletionMessage {
 }
 
 // Chat window size configurations
-type ChatSize = 'small' | 'medium' | 'large';
+// type ChatSize = 'small' | 'medium' | 'large';
+type ChatSize = 'medium' | 'large';
 
 interface SizeConfig {
   width: number;
@@ -73,17 +74,35 @@ interface SizeConfig {
 }
 
 const SIZE_CONFIGS: Record<ChatSize, SizeConfig> = {
-  small: { width: 360, height: 480 },
+  // small: { width: 360, height: 480 },
   medium: { width: 420, height: 580 },
   large: { width: 520, height: 720 },
 };
 
-const SIZE_ORDER: ChatSize[] = ['small', 'medium', 'large'];
+// const SIZE_ORDER: ChatSize[] = ['small', 'medium', 'large'];
+const SIZE_ORDER: ChatSize[] = ['medium', 'large'];
 
 // Configuration - can be overridden via props or environment variables
 const DEFAULT_LLM_API_URL = 'http://localhost:8111/v1/chat/completions';
 const DEFAULT_LLM_API_KEY = 'http://host.docker.internal:11434/v1__nothing__Qwen3-Coder:latest__http://host.docker.internal:8088__admin__admin';
 const DEFAULT_MODEL = 'superset';
+
+// ===========================================
+// Sh_DB Brand Colors (from logo)
+// ===========================================
+const BRAND = {
+  coral: '#da6a59',
+  coralLight: '#e88a7d',
+  coralDark: '#c45a4b',
+  coralPale: '#fdf0ee',
+  navy: '#172d67',
+  navyLight: '#2a4080',
+  navyMuted: '#5c73a7',
+  navyDeep: '#101f4a',
+  peach: '#e9a69b',
+  peachLight: '#f2c4bd',
+  peachPale: '#f5d9d4',
+};
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -144,17 +163,17 @@ const deserializeMessages = (stored: StoredMessage[]): Message[] => {
   }));
 };
 
-// Animations
+// Animations - Updated with brand colors
 const pulseGlow = keyframes`
   0%, 100% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4),
-                0 0 40px rgba(59, 130, 246, 0.2),
-                0 0 60px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 20px ${BRAND.coral}66,
+                0 0 40px ${BRAND.coral}33,
+                0 0 60px ${BRAND.coral}1A;
   }
   50% {
-    box-shadow: 0 0 25px rgba(59, 130, 246, 0.6),
-                0 0 50px rgba(59, 130, 246, 0.3),
-                0 0 75px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 25px ${BRAND.coral}99,
+                0 0 50px ${BRAND.coral}4D,
+                0 0 75px ${BRAND.coral}26;
   }
 `;
 
@@ -190,27 +209,27 @@ const sparkle = keyframes`
   }
 `;
 
-// Styled Components with theme support
+// Styled Components - Updated with Sh_DB Brand Bold theme
 const ChatbotContainer = styled.div`
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 1000;
-  font-family: ${({ theme }) => theme.fontFamily || "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"};
+  font-family: 'Space Grotesk', ${({ theme }) => theme.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"};
 `;
 
 const FloatingButton = styled.button<{ isOpen: boolean }>`
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  border: none;
+  border: 3px solid ${BRAND.peach};
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, ${({ theme }) => theme.colorPrimary} 0%, #8b5cf6 50%, #06b6d4 100%);
+  background: linear-gradient(135deg, ${BRAND.coral} 0%, ${BRAND.coralDark} 50%, ${BRAND.navy} 100%);
   background-size: 200% 200%;
-  animation: ${pulseGlow} 2s ease-in-out infinite;
+  animation: ${pulseGlow} 2.5s ease-in-out infinite;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -225,7 +244,7 @@ const FloatingButton = styled.button<{ isOpen: boolean }>`
     background: linear-gradient(
       45deg,
       transparent 30%,
-      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.15) 50%,
       transparent 70%
     );
     transform: rotate(45deg);
@@ -234,22 +253,27 @@ const FloatingButton = styled.button<{ isOpen: boolean }>`
 
   &:hover {
     transform: scale(1.1);
+    border-color: ${BRAND.coral};
     &::before { left: 100%; }
   }
 
   &:active { transform: scale(0.95); }
 
   svg {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     color: white;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     transition: transform 0.3s ease;
   }
 
   ${({ isOpen }) => isOpen && `
     transform: rotate(90deg) scale(1);
-    &:hover { transform: rotate(90deg) scale(1.1); }
+    background: ${BRAND.navy};
+    &:hover { 
+      transform: rotate(90deg) scale(1.1); 
+      background: ${BRAND.navyLight};
+    }
   `}
 `;
 
@@ -257,7 +281,7 @@ const SparkleEffect = styled.span`
   position: absolute;
   width: 8px;
   height: 8px;
-  background: white;
+  background: ${BRAND.peachLight};
   border-radius: 50%;
   animation: ${sparkle} 2s ease-in-out infinite;
   &:nth-of-type(1) { top: 8px; right: 12px; animation-delay: 0s; }
@@ -267,16 +291,16 @@ const SparkleEffect = styled.span`
 
 const ChatWindow = styled.div<{ isOpen: boolean; $isDark: boolean; $width: number; $height: number }>`
   position: absolute;
-  bottom: 76px;
+  bottom: 80px;
   right: 0;
   width: ${({ $width }) => $width}px;
   height: ${({ $height }) => $height}px;
-  background: ${({ theme, $isDark }) => $isDark 
-    ? `linear-gradient(180deg, ${theme.colorBgContainer} 0%, ${theme.colorBgElevated} 100%)`
-    : `linear-gradient(180deg, ${theme.colorBgContainer} 0%, ${theme.colorBgLayout} 100%)`};
-  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
-  box-shadow: ${({ theme }) => theme.boxShadow};
-  border: 1px solid ${({ theme }) => theme.colorBorderSecondary};
+  background: ${({ $isDark }) => $isDark 
+    ? `linear-gradient(180deg, #111d33 0%, #0d1526 100%)`
+    : `linear-gradient(180deg, #ffffff 0%, #faf9f8 100%)`};
+  border-radius: 16px;
+  box-shadow: 0 8px 32px ${BRAND.navy}1A, 0 16px 48px ${BRAND.coral}14;
+  border: 2px solid ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.peach};
   display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
   flex-direction: column;
   overflow: hidden;
@@ -285,26 +309,25 @@ const ChatWindow = styled.div<{ isOpen: boolean; $isDark: boolean; $width: numbe
 `;
 
 const ChatHeader = styled.div<{ $isDark: boolean }>`
-  padding: 20px 24px;
-  background: ${({ theme, $isDark }) => $isDark
-    ? `linear-gradient(90deg, rgba(40, 147, 179, 0.2) 0%, rgba(139, 92, 246, 0.2) 50%, rgba(6, 182, 212, 0.2) 100%)`
-    : `linear-gradient(90deg, ${theme.colorPrimaryBg} 0%, rgba(139, 92, 246, 0.1) 50%, rgba(6, 182, 212, 0.1) 100%)`};
-  border-bottom: 1px solid ${({ theme }) => theme.colorBorderSecondary};
+  padding: 18px 20px;
+  background: ${BRAND.navy};
+  border-bottom: 3px solid ${BRAND.coral};
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 `;
 
 const AvatarContainer = styled.div`
-  width: 44px;
-  height: 44px;
-  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
-  background: linear-gradient(135deg, ${({ theme }) => theme.colorPrimary} 0%, #8b5cf6 100%);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, ${BRAND.coral} 0%, ${BRAND.coralDark} 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px ${({ theme }) => theme.colorPrimary}66;
-  svg { width: 24px; height: 24px; color: white; }
+  box-shadow: 0 4px 12px ${BRAND.coral}66;
+  border: 2px solid ${BRAND.peach};
+  svg { width: 26px; height: 26px; color: white; }
 `;
 
 const HeaderInfo = styled.div`
@@ -313,28 +336,32 @@ const HeaderInfo = styled.div`
 
 const HeaderTitle = styled.h3`
   margin: 0;
-  font-size: ${({ theme }) => theme.fontSizeLG}px;
-  font-weight: ${({ theme }) => theme.fontWeightStrong};
-  color: ${({ theme }) => theme.colorTextHeading};
+  font-size: 17px;
+  font-weight: 600;
+  color: #ffffff;
   letter-spacing: -0.02em;
+  font-family: 'Space Grotesk', sans-serif;
 `;
 
 const HeaderSubtitle = styled.p`
-  margin: 2px 0 0;
-  font-size: ${({ theme }) => theme.fontSizeSM}px;
-  color: ${({ theme }) => theme.colorTextSecondary};
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: ${BRAND.peachLight};
 `;
 
 const ConnectionStatus = styled.span<{ connected: boolean }>`
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   &::before {
     content: '';
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: ${({ connected, theme }) => connected ? theme.colorSuccess : theme.colorError};
+    background: ${({ connected }) => connected ? '#4ade80' : BRAND.coral};
+    box-shadow: ${({ connected }) => connected 
+      ? '0 0 8px #4ade80' 
+      : `0 0 8px ${BRAND.coral}`};
   }
 `;
 
@@ -344,59 +371,68 @@ const HeaderButtons = styled.div`
 `;
 
 const HeaderButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: ${({ theme }) => theme.borderRadius}px;
-  border: none;
-  background: ${({ theme }) => theme.colorFillSecondary};
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid ${BRAND.navyMuted};
+  background: ${BRAND.navyLight};
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
   &:hover { 
-    background: ${({ theme }) => theme.colorFillContentHover}; 
-    transform: scale(1.05); 
+    background: ${BRAND.navyMuted}; 
+    transform: scale(1.05);
+    border-color: ${BRAND.peach};
   }
   svg { 
     width: 16px; 
     height: 16px; 
-    color: ${({ theme }) => theme.colorTextSecondary}; 
+    color: ${BRAND.peachLight}; 
   }
 `;
 
-const CloseButton = styled(HeaderButton)``;
+const CloseButton = styled(HeaderButton)`
+  &:hover {
+    background: ${BRAND.coral};
+    border-color: ${BRAND.coral};
+    svg { color: white; }
+  }
+`;
 
 const ResetButton = styled(HeaderButton)`
   &:hover {
-    background: ${({ theme }) => theme.colorErrorBg};
-    svg { color: ${({ theme }) => theme.colorError}; }
+    background: ${BRAND.coralDark};
+    border-color: ${BRAND.coral};
+    svg { color: white; }
   }
 `;
 
 const ResizeButton = styled(HeaderButton)`
   &:hover {
-    background: ${({ theme }) => theme.colorPrimaryBg};
-    svg { color: ${({ theme }) => theme.colorPrimary}; }
+    background: ${BRAND.navyMuted};
+    svg { color: ${BRAND.peach}; }
   }
 `;
 
-const MessagesContainer = styled.div`
+const MessagesContainer = styled.div<{ $isDark: boolean }>`
   flex: 1;
   overflow-y: auto;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: ${({ $isDark }) => $isDark ? '#0d1526' : '#faf9f8'};
 
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { 
-    background: ${({ theme }) => theme.colorFillSecondary}; 
+    background: ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.peach}; 
     border-radius: 3px; 
   }
   &::-webkit-scrollbar-thumb:hover { 
-    background: ${({ theme }) => theme.colorFillContentHover}; 
+    background: ${({ $isDark }) => $isDark ? BRAND.navyLight : BRAND.coral}; 
   }
 `;
 
@@ -409,32 +445,38 @@ const MessageWrapper = styled.div<{ isUser: boolean }>`
 
 const MessageBubble = styled.div<{ isUser: boolean; isStreaming?: boolean; $isDark: boolean }>`
   max-width: 85%;
-  padding: 12px 16px;
-  border-radius: ${({ isUser, theme }) => isUser 
-    ? `${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusSM}px ${theme.borderRadiusLG}px` 
-    : `${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusSM}px`};
-  background: ${({ isUser, theme, $isDark }) => isUser
-    ? `linear-gradient(135deg, ${theme.colorPrimary} 0%, ${theme.colorPrimaryActive} 100%)`
+  padding: 14px 18px;
+  border-radius: ${({ isUser }) => isUser 
+    ? '16px 16px 4px 16px' 
+    : '16px 16px 16px 4px'};
+  background: ${({ isUser, $isDark }) => isUser
+    ? `linear-gradient(135deg, ${BRAND.coral} 0%, ${BRAND.coralDark} 100%)`
     : $isDark 
-      ? theme.colorFillSecondary
-      : theme.colorBgElevated};
-  color: ${({ isUser, theme }) => isUser ? theme.colorWhite : theme.colorText};
-  font-size: ${({ theme }) => theme.fontSize}px;
-  line-height: ${({ theme }) => theme.lineHeight};
-  box-shadow: ${({ isUser, theme }) => isUser
-    ? `0 4px 12px ${theme.colorPrimary}4D`
-    : theme.boxShadowTertiary};
-  border: 1px solid ${({ isUser, theme, $isDark }) => isUser 
-    ? 'transparent' 
-    : $isDark ? theme.colorBorderSecondary : theme.colorBorder};
+      ? BRAND.navyLight
+      : '#ffffff'};
+  color: ${({ isUser, $isDark }) => isUser 
+    ? '#ffffff' 
+    : $isDark ? '#e8ebf3' : BRAND.navy};
+  font-size: 14px;
+  line-height: 1.6;
+  box-shadow: ${({ isUser, $isDark }) => isUser
+    ? `0 4px 16px ${BRAND.coral}4D`
+    : $isDark 
+      ? `0 2px 8px ${BRAND.navyDeep}66`
+      : `0 2px 12px ${BRAND.navy}14`};
+  border: 2px solid ${({ isUser, $isDark }) => isUser 
+    ? BRAND.peach 
+    : $isDark ? BRAND.navyMuted : BRAND.peachLight};
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: 'Space Grotesk', sans-serif;
 
   ${({ isStreaming }) => isStreaming && `
     &::after {
       content: '▋';
       animation: blink 1s infinite;
       margin-left: 2px;
+      color: ${BRAND.coral};
     }
     @keyframes blink {
       0%, 50% { opacity: 1; }
@@ -444,43 +486,45 @@ const MessageBubble = styled.div<{ isUser: boolean; isStreaming?: boolean; $isDa
 `;
 
 const UserMessageContent = styled.div`
-  font-size: ${({ theme }) => theme.fontSize}px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
   white-space: pre-wrap;
 `;
 
-const MessageTime = styled.span`
+const MessageTime = styled.span<{ $isDark: boolean }>`
   font-size: 10px;
-  color: ${({ theme }) => theme.colorTextTertiary};
+  color: ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.navyMuted};
   margin-top: 4px;
   padding: 0 4px;
+  font-family: 'IBM Plex Mono', monospace;
 `;
 
 const TypingIndicator = styled.div<{ $isDark: boolean }>`
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 12px 16px;
-  background: ${({ theme, $isDark }) => $isDark ? theme.colorFillSecondary : theme.colorBgElevated};
-  border: 1px solid ${({ theme }) => theme.colorBorderSecondary};
-  border-radius: ${({ theme }) => `${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusLG}px ${theme.borderRadiusSM}px`};
+  gap: 5px;
+  padding: 14px 18px;
+  background: ${({ $isDark }) => $isDark ? BRAND.navyLight : '#ffffff'};
+  border: 2px solid ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.peachLight};
+  border-radius: 16px 16px 16px 4px;
   width: fit-content;
+  box-shadow: 0 2px 8px ${BRAND.navy}14;
 
   span {
     width: 8px;
     height: 8px;
-    background: ${({ theme }) => theme.colorTextTertiary};
+    background: ${BRAND.coral};
     border-radius: 50%;
     animation: ${typingDots} 1.4s ease-in-out infinite;
-    &:nth-of-type(2) { animation-delay: 0.2s; }
-    &:nth-of-type(3) { animation-delay: 0.4s; }
+    &:nth-of-type(2) { animation-delay: 0.2s; background: ${BRAND.peach}; }
+    &:nth-of-type(3) { animation-delay: 0.4s; background: ${BRAND.navy}; }
   }
 `;
 
 const InputContainer = styled.div<{ $isDark: boolean }>`
   padding: 16px 20px 20px;
-  background: ${({ theme, $isDark }) => $isDark ? theme.colorBgContainer : theme.colorBgLayout};
-  border-top: 1px solid ${({ theme }) => theme.colorBorderSecondary};
+  background: ${({ $isDark }) => $isDark ? '#111d33' : '#ffffff'};
+  border-top: 2px solid ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.peach};
 `;
 
 const InputWrapper = styled.div`
@@ -491,35 +535,35 @@ const InputWrapper = styled.div`
 
 const TextInput = styled.textarea<{ $isDark: boolean }>`
   flex: 1;
-  min-height: 44px;
+  min-height: 46px;
   max-height: 120px;
   padding: 12px 16px;
-  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
-  border: 1px solid ${({ theme }) => theme.colorBorder};
-  background: ${({ theme, $isDark }) => $isDark ? theme.colorFillTertiary : theme.colorBgContainer};
-  color: ${({ theme }) => theme.colorText};
-  font-size: ${({ theme }) => theme.fontSize}px;
-  font-family: inherit;
+  border-radius: 12px;
+  border: 2px solid ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.peachLight};
+  background: ${({ $isDark }) => $isDark ? BRAND.navyDeep : '#faf9f8'};
+  color: ${({ $isDark }) => $isDark ? '#e8ebf3' : BRAND.navy};
+  font-size: 14px;
+  font-family: 'Space Grotesk', sans-serif;
   resize: none;
   outline: none;
   transition: all 0.2s ease;
 
-  &::placeholder { color: ${({ theme }) => theme.colorTextPlaceholder}; }
+  &::placeholder { color: ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.navyMuted}; }
   &:focus {
-    border-color: ${({ theme }) => theme.colorPrimary};
-    background: ${({ theme, $isDark }) => $isDark ? theme.colorFillSecondary : theme.colorBgContainer};
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.colorPrimaryBg};
+    border-color: ${BRAND.coral};
+    background: ${({ $isDark }) => $isDark ? BRAND.navyLight : '#ffffff'};
+    box-shadow: 0 0 0 4px ${BRAND.coralPale};
   }
 `;
 
 const SendButton = styled.button<{ disabled: boolean }>`
-  width: 44px;
-  height: 44px;
-  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
-  border: none;
-  background: ${({ disabled, theme }) => disabled
-    ? theme.colorFillSecondary
-    : `linear-gradient(135deg, ${theme.colorPrimary} 0%, #8b5cf6 100%)`};
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border: 2px solid ${({ disabled }) => disabled ? BRAND.peachLight : BRAND.peach};
+  background: ${({ disabled }) => disabled
+    ? BRAND.peachPale
+    : `linear-gradient(135deg, ${BRAND.coral} 0%, ${BRAND.coralDark} 100%)`};
   cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
   display: flex;
   align-items: center;
@@ -529,89 +573,101 @@ const SendButton = styled.button<{ disabled: boolean }>`
 
   &:hover:not(:disabled) { 
     transform: scale(1.05); 
-    box-shadow: 0 4px 12px ${({ theme }) => theme.colorPrimary}66; 
+    box-shadow: 0 6px 20px ${BRAND.coral}66;
+    border-color: ${BRAND.coral};
   }
   &:active:not(:disabled) { transform: scale(0.95); }
 
   svg {
     width: 20px;
     height: 20px;
-    color: ${({ disabled, theme }) => disabled ? theme.colorTextDisabled : 'white'};
+    color: ${({ disabled }) => disabled ? BRAND.navyMuted : 'white'};
     transform: rotate(-45deg);
   }
 `;
 
-const WelcomeMessage = styled.div`
+const WelcomeMessage = styled.div<{ $isDark: boolean }>`
   text-align: center;
-  padding: 20px;
-  color: ${({ theme }) => theme.colorTextSecondary};
+  padding: 24px 20px;
+  color: ${({ $isDark }) => $isDark ? BRAND.peachLight : BRAND.navyMuted};
 
   h4 { 
-    font-size: ${({ theme }) => theme.fontSizeLG}px; 
-    font-weight: ${({ theme }) => theme.fontWeightStrong}; 
-    color: ${({ theme }) => theme.colorTextHeading}; 
-    margin: 0 0 8px; 
+    font-size: 18px; 
+    font-weight: 600; 
+    color: ${({ $isDark }) => $isDark ? '#ffffff' : BRAND.navy}; 
+    margin: 0 0 10px;
+    font-family: 'Space Grotesk', sans-serif;
   }
   p { 
-    font-size: ${({ theme }) => theme.fontSizeSM}px; 
-    line-height: 1.5; 
-    margin: 0 0 16px; 
+    font-size: 13px; 
+    line-height: 1.6; 
+    margin: 0 0 20px; 
   }
 `;
 
 const SuggestionChips = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
 `;
 
-const SuggestionChip = styled.button`
-  padding: 8px 14px;
-  border-radius: 20px;
-  border: 1px solid ${({ theme }) => theme.colorPrimaryBorder};
-  background: ${({ theme }) => theme.colorPrimaryBg};
-  color: ${({ theme }) => theme.colorPrimaryText};
-  font-size: ${({ theme }) => theme.fontSizeSM}px;
+const SuggestionChip = styled.button<{ $isDark: boolean }>`
+  padding: 10px 16px;
+  border-radius: 24px;
+  border: 2px solid ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.peach};
+  background: ${({ $isDark }) => $isDark ? BRAND.navyLight : BRAND.coralPale};
+  color: ${({ $isDark }) => $isDark ? BRAND.peachLight : BRAND.coral};
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'Space Grotesk', sans-serif;
 
   &:hover {
-    background: ${({ theme }) => theme.colorPrimaryBgHover};
-    border-color: ${({ theme }) => theme.colorPrimary};
-    transform: translateY(-1px);
+    background: ${({ $isDark }) => $isDark ? BRAND.navyMuted : BRAND.coral};
+    border-color: ${BRAND.coral};
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${BRAND.coral}4D;
   }
 `;
 
-const ErrorMessage = styled.div`
-  padding: 12px 16px;
-  background: ${({ theme }) => theme.colorErrorBg};
-  border: 1px solid ${({ theme }) => theme.colorErrorBorder};
-  border-radius: ${({ theme }) => theme.borderRadiusLG}px;
-  color: ${({ theme }) => theme.colorErrorText};
-  font-size: ${({ theme }) => theme.fontSizeSM}px;
+const ErrorMessage = styled.div<{ $isDark: boolean }>`
+  padding: 14px 18px;
+  background: ${({ $isDark }) => $isDark ? '#2e1a18' : BRAND.coralPale};
+  border: 2px solid ${BRAND.coral};
+  border-radius: 12px;
+  color: ${({ $isDark }) => $isDark ? BRAND.peach : BRAND.coralDark};
+  font-size: 13px;
   animation: ${fadeIn} 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 
   button {
     margin-left: auto;
-    padding: 4px 12px;
-    border-radius: ${({ theme }) => theme.borderRadius}px;
-    border: 1px solid ${({ theme }) => theme.colorBorder};
-    background: transparent;
-    color: ${({ theme }) => theme.colorText};
-    font-size: ${({ theme }) => theme.fontSizeSM}px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 2px solid ${BRAND.coral};
+    background: ${({ $isDark }) => $isDark ? BRAND.navyLight : 'white'};
+    color: ${BRAND.coral};
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    &:hover { background: ${({ theme }) => theme.colorFillSecondary}; }
+    font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.2s ease;
+    &:hover { 
+      background: ${BRAND.coral}; 
+      color: white;
+    }
   }
 `;
 
-// SVG Icons as components
+// SVG Icons as components - Using Sh_DB logo colors
 const AIIcon: FC = () => (
   <svg viewBox="0 0 124 149" width="24" height="29" overflow="hidden">
-  <defs><clipPath id="clip0"><rect x="239" y="733" width="124" height="149"/></clipPath></defs><g clip-path="url(#clip0)" transform="translate(-239 -733)"><path d="M25.1285 98.1167C20.4225 102.912 20.1561 110.104 24.4182 115.964 24.9509 116.675 25.5725 117.385 26.1941 118.273 22.4647 120.404 18.6466 120.67 14.6509 119.605 6.39313 117.207 0.355174 109.127 0 99.9814-0.26638 93.7658 1.59828 88.0831 4.52846 82.6667 7.10347 77.9606 10.3 73.6985 14.1182 69.9692 27.8811 56.2062 40.4898 43.6864 54.2528 30.0122 54.3416 29.9234 52.1217 56.9166 51.2338 72.1003 51.2338 72.1003 32.9424 90.3029 25.1285 98.2055Z" fill="#E9A69B" transform="matrix(1 0 0 1.05141 239.2 733)"/><path d="M123.6 0C123.245 2.30863 121.381 15.3613 119.516 28.0587 117.119 44.4855 108.328 59.4028 95.0977 69.5252 74.9416 84.9753 47.0605 106.286 45.0183 107.44 46.6165 96.3409 49.3691 84.2649 50.8786 73.5209L51.2338 71.9227C75.3856 47.9484 99.3598 24.1518 123.6 0Z" fill="#DA6A59" transform="matrix(1 0 0 1.05141 239.2 733)"/><path d="M98.3831 141.714C85.4193 141.714 72.4554 141.892 59.4916 141.714 52.9209 141.625 47.1493 138.873 42.3545 134.344 37.2044 129.372 32.232 124.311 27.082 119.25 26.3716 118.628 26.2829 118.273 27.2596 117.651 32.9424 114.455 38.5363 111.258 44.1303 108.062 44.7519 107.706 45.1071 107.706 45.7286 108.062 63.1321 119.161 98.3831 141.714 98.2943 141.803Z" fill="#DA6A59" transform="matrix(1 0 0 1.05141 239.2 733)"/></g>
+  <defs><clipPath id="clip0"><rect x="239" y="733" width="124" height="149"/></clipPath></defs><g clipPath="url(#clip0)" transform="translate(-239 -733)"><path d="M25.1285 98.1167C20.4225 102.912 20.1561 110.104 24.4182 115.964 24.9509 116.675 25.5725 117.385 26.1941 118.273 22.4647 120.404 18.6466 120.67 14.6509 119.605 6.39313 117.207 0.355174 109.127 0 99.9814-0.26638 93.7658 1.59828 88.0831 4.52846 82.6667 7.10347 77.9606 10.3 73.6985 14.1182 69.9692 27.8811 56.2062 40.4898 43.6864 54.2528 30.0122 54.3416 29.9234 52.1217 56.9166 51.2338 72.1003 51.2338 72.1003 32.9424 90.3029 25.1285 98.2055Z" fill="${BRAND.peach}" transform="matrix(1 0 0 1.05141 239.2 733)"/><path d="M123.6 0C123.245 2.30863 121.381 15.3613 119.516 28.0587 117.119 44.4855 108.328 59.4028 95.0977 69.5252 74.9416 84.9753 47.0605 106.286 45.0183 107.44 46.6165 96.3409 49.3691 84.2649 50.8786 73.5209L51.2338 71.9227C75.3856 47.9484 99.3598 24.1518 123.6 0Z" fill="${BRAND.coral}" transform="matrix(1 0 0 1.05141 239.2 733)"/><path d="M98.3831 141.714C85.4193 141.714 72.4554 141.892 59.4916 141.714 52.9209 141.625 47.1493 138.873 42.3545 134.344 37.2044 129.372 32.232 124.311 27.082 119.25 26.3716 118.628 26.2829 118.273 27.2596 117.651 32.9424 114.455 38.5363 111.258 44.1303 108.062 44.7519 107.706 45.1071 107.706 45.7286 108.062 63.1321 119.161 98.3831 141.714 98.2943 141.803Z" fill="${BRAND.coral}" transform="matrix(1 0 0 1.05141 239.2 733)"/></g>
   </svg>
 );
 
@@ -665,7 +721,10 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
   
   // Detect if dark mode based on colorBgBase
   const isDark = useMemo(() => {
-    return theme.colorBgBase === '#000' || theme.colorBgBase === '#000000';
+    return theme.colorBgBase === '#000' || 
+           theme.colorBgBase === '#000000' ||
+           theme.colorBgBase === '#0d1526' ||
+           theme.colorBgBase === '#0a1020';
   }, [theme.colorBgBase]);
 
   // Initialize state from localStorage
@@ -997,14 +1056,18 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
           </HeaderButtons>
         </ChatHeader>
 
-        <MessagesContainer>
+        <MessagesContainer $isDark={isDark}>
           {messages.length === 0 ? (
-            <WelcomeMessage>
+            <WelcomeMessage $isDark={isDark}>
               <h4>👋 {t("Hello! I'm Allm, your Dashboard Assistant")}</h4>
               <p>{t('I can help you create charts, understand your data, and navigate this dashboard. What would you like to do?')}</p>
               <SuggestionChips>
                 {suggestions.map((suggestion, index) => (
-                  <SuggestionChip key={index} onClick={() => handleSendMessage(suggestion)}>
+                  <SuggestionChip 
+                    key={index} 
+                    onClick={() => handleSendMessage(suggestion)}
+                    $isDark={isDark}
+                  >
                     {suggestion}
                   </SuggestionChip>
                 ))}
@@ -1013,7 +1076,11 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
           ) : (
             messages.map(message => (
               <MessageWrapper key={message.id} isUser={message.role === 'user'}>
-                <MessageBubble isUser={message.role === 'user'} $isDark={isDark}>
+                <MessageBubble 
+                  isUser={message.role === 'user'} 
+                  $isDark={isDark}
+                  isStreaming={message.isStreaming}
+                >
                   {message.role === 'user' ? (
                     <UserMessageContent>{message.content}</UserMessageContent>
                   ) : (
@@ -1023,7 +1090,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
                     />
                   )}
                 </MessageBubble>
-                <MessageTime>{formatTime(message.timestamp)}</MessageTime>
+                <MessageTime $isDark={isDark}>{formatTime(message.timestamp)}</MessageTime>
               </MessageWrapper>
             ))
           )}
@@ -1037,7 +1104,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
           )}
 
           {error && (
-            <ErrorMessage>
+            <ErrorMessage $isDark={isDark}>
               {error}
               <button onClick={handleRetry}>{t('Retry')}</button>
             </ErrorMessage>
@@ -1053,7 +1120,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={t('Create chart for...')}
+              placeholder={t('Create a chart...')}
               rows={1}
               disabled={isLoading}
               $isDark={isDark}
