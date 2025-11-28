@@ -889,7 +889,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
             <AIIcon />
           </AvatarContainer>
           <HeaderInfo>
-            <HeaderTitle>{t('ALLM Assistant')}</HeaderTitle>
+            <HeaderTitle>{t('Allm by Shaheen')}</HeaderTitle>
             <HeaderSubtitle>
               <ConnectionStatus connected={isConnected}>
                 {isConnected ? t('Connected') : t('Disconnected')}
@@ -915,7 +915,7 @@ const DashboardChatbotStreaming: FC<DashboardChatbotProps> = ({
         <MessagesContainer>
           {messages.length === 0 ? (
             <WelcomeMessage>
-              <h4>👋 {t("Hello! I'm ALLM, your Dashboard Assistant")}</h4>
+              <h4>👋 {t("Hello! I'm Allm, your Dashboard Assistant")}</h4>
               <p>{t('I can help you create charts, understand your data, and navigate this dashboard. What would you like to do?')}</p>
               <SuggestionChips>
                 {suggestions.map((suggestion, index) => (
